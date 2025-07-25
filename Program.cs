@@ -1,7 +1,8 @@
-using EmployeeManagementSystem.Middleware;
+﻿using EmployeeManagementSystem.Middleware;
 using EmployeeManagementSystem.Repositories;
 using EmployeeManagementSystem.Services;
 using Serilog;
+using System.Globalization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,6 +21,11 @@ builder.Services.AddScoped<IEmployeeRepository, JsonEmployeeRepository>();
 builder.Services.AddScoped<IDepartmentRepository, JsonDepartmentRepository>();
 builder.Services.AddScoped<IEmployeeService, EmployeeService>();
 builder.Services.AddScoped<IDepartmentService, DepartmentService>();
+
+// ✅ Set default culture to en-US (for correct currency formatting with $)
+var cultureInfo = new CultureInfo("en-US");
+CultureInfo.DefaultThreadCurrentCulture = cultureInfo;
+CultureInfo.DefaultThreadCurrentUICulture = cultureInfo;
 
 var app = builder.Build();
 
