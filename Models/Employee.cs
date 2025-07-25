@@ -24,7 +24,7 @@ namespace EmployeeManagementSystem.Models
         public DateTime HireDate { get; set; }
 
         [Required(ErrorMessage = "Salary is required")]
-        [Range(0.01, 99999999.99, ErrorMessage = "Salary must be greater than 0")]
+        [Range(0.01, 99999999.99, ErrorMessage = "Salary must be between 0.01 and 99,999,999.99")]
         [DisplayFormat(DataFormatString = "{0:C}")]
         public decimal Salary { get; set; }
 
