@@ -98,6 +98,16 @@ jobs:
         cache-from: type=gha
         cache-to: type=gha,mode=max
         
+    - name: Verify Docker image was built
+      run: |
+        echo "Checking if Docker image was built..."
+        docker images ${{ env.DOCKER_IMAGE_NAME }}:test
+        if ! docker images ${{ env.DOCKER_IMAGE_NAME }}:test | grep -q test; then
+          echo "❌ Docker image was not built successfully"
+          exit 1
+        fi
+        echo "✅ Docker image found"
+        
     - name: Test Docker container
       run: |
         # Start container in background
