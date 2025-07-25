@@ -1,0 +1,257 @@
+﻿@model EmployeeManagementSystem.Models.DashboardViewModel
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<div class="row">
+    <div class="col-md-12">
+        <h2><i class="fas fa-tachometer-alt me-2"></i>Dashboard</h2>
+        <hr />
+    </div>
+</div>
+
+<!-- Search Box -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title"><i class="fas fa-search me-2"></i>Quick Search</h5>
+                <div class="input-group">
+                    <input type="text" class="form-control" id="searchInput" placeholder="Search employees by name or department..." value="@Model.SearchTerm">
+                    <button class="btn btn-outline-primary" type="button" id="searchButton">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+                <div id="searchResults" class="mt-2"></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h5 class="card-title">Total Employees</h5>
+                        <h2 class="mb-0">@Model.TotalEmployees</h2>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-users fa-3x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Employees by Department</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="departmentChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-list me-2"></i>Department Summary</h5>
+            </div>
+            <div class="card-body">
+                @foreach (var dept in Model.EmployeesByDepartment)
+                {
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-truncate me-2">@dept.DepartmentName</span>
+                        <span class="badge bg-primary">@dept.EmployeeCount</span>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Hires -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-clock me-2"></i>Recent Hires (Last 30 Days)</h5>
+                <small class="text-muted">@Model.RecentHires.Count employees</small>
+            </div>
+            <div class="card-body">
+                @if (Model.RecentHires.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Department</th>
+                                    <th>Hire Date</th>
+                                    <th>Salary</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var employee in Model.RecentHires)
+                                {
+                                    <tr>
+                                        <td>
+                                            <strong>@employee.FullName</strong>
+                                        </td>
+                                        <td>@employee.Email</td>
+                                        <td>
+                                            <span class="badge bg-secondary">@employee.Department?.Name</span>
+                                        </td>
+                                        <td>@employee.HireDate.ToString("MMM dd, yyyy")</td>
+                                        <td>@employee.Salary.ToString("C")</td>
+                                        <td>
+                                            <a asp-controller="Employees" asp-action="Details" asp-route-id="@employee.Id" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-users fa-3x mb-3"></i>
+                        <p>No new hires in the last 30 days</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Department Chart
+        const ctx = document.getElementById('departmentChart').getContext('2d');
+        const chartData = @Html.Raw(Json.Serialize(Model.EmployeesByDepartment));
+
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: chartData.map(d => d.departmentName),
+                datasets: [{
+                    label: 'Number of Employees',
+                    data: chartData.map(d => d.employeeCount),
+                    backgroundColor: [
+                        'rgba(54, 162, 235, 0.8)',
+                        'rgba(255, 99, 132, 0.8)',
+                        'rgba(255, 205, 86, 0.8)',
+                        'rgba(75, 192, 192, 0.8)',
+                        'rgba(153, 102, 255, 0.8)',
+                        'rgba(255, 159, 64, 0.8)'
+                    ],
+                    borderColor: [
+                        'rgba(54, 162, 235, 1)',
+                        'rgba(255, 99, 132, 1)',
+                        'rgba(255, 205, 86, 1)',
+                        'rgba(75, 192, 192, 1)',
+                        'rgba(153, 102, 255, 1)',
+                        'rgba(255, 159, 64, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+
+        // Search functionality
+        document.getElementById('searchButton').addEventListener('click', performSearch);
+        document.getElementById('searchInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                performSearch();
+            }
+        });
+
+        function performSearch() {
+            const searchTerm = document.getElementById('searchInput').value.trim();
+            const resultsDiv = document.getElementById('searchResults');
+
+            if (searchTerm.length < 2) {
+                resultsDiv.innerHTML = '';
+                return;
+            }
+
+            fetch(`/Home/Search?term=${encodeURIComponent(searchTerm)}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.length > 0) {
+                        let html = '<div class="list-group mt-2">';
+                        data.forEach(employee => {
+                            html += `
+                                <a href="/Employees/Details/${employee.id}" class="list-group-item list-group-item-action">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">${employee.name}</h6>
+                                        <small>${employee.department}</small>
+                                    </div>
+                                    <small class="text-muted">${employee.email}</small>
+                                </a>
+                            `;
+                        });
+                        html += '</div>';
+                        resultsDiv.innerHTML = html;
+                    } else {
+                        resultsDiv.innerHTML = '<div class="alert alert-info mt-2"><small>No employees found matching your search.</small></div>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Search error:', error);
+                    resultsDiv.innerHTML = '<div class="alert alert-danger mt-2"><small>Search failed. Please try again.</small></div>';
+                });
+        }
+
+        // Clear search results when input is cleared
+        document.getElementById('searchInput').addEventListener('input', function() {
+            if (this.value.length === 0) {
+                document.getElementById('searchResults').innerHTML = '';
+            }
+        });
+    </script>
+}
+
+<style>
+    .opacity-75 {
+        opacity: 0.75;
+    }
+
+    #departmentChart {
+        height: 300px !important;
+    }
+
+    .card {
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        border: 1px solid rgba(0, 0, 0, 0.125);
+    }
+
+    .list-group-item:hover {
+        background-color: #f8f9fa;
+    }
+</style>

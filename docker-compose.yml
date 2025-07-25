@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  employeemanagementsystem:
+    image: employeemanagementsystem
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:8080
+    volumes:
+      - employee_data:/app/App_Data
+      - employee_logs:/app/Logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  employee_data:
+    driver: local
+  employee_logs:
+    driver: local

@@ -1,0 +1,101 @@
+﻿@model EmployeeManagementSystem.Models.Employee
+@{
+    ViewData["Title"] = "Add Employee";
+}
+
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="fas fa-user-plus me-2"></i>Add New Employee</h4>
+            </div>
+            <div class="card-body">
+                <form asp-action="Create" method="post">
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="FirstName" class="form-label">First Name <span class="text-danger">*</span></label>
+                            <input asp-for="FirstName" class="form-control" placeholder="Enter first name">
+                            <span asp-validation-for="FirstName" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="LastName" class="form-label">Last Name <span class="text-danger">*</span></label>
+                            <input asp-for="LastName" class="form-control" placeholder="Enter last name">
+                            <span asp-validation-for="LastName" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Email" class="form-label">Email Address <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                            <input asp-for="Email" class="form-control" placeholder="employee@company.com">
+                        </div>
+                        <span asp-validation-for="Email" class="text-danger"></span>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="HireDate" class="form-label">Hire Date <span class="text-danger">*</span></label>
+                            <input asp-for="HireDate" class="form-control" type="date" max="@DateTime.Now.ToString("yyyy-MM-dd")">
+                            <span asp-validation-for="HireDate" class="text-danger"></span>
+                            <div class="form-text">Hire date cannot be in the future.</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Salary" class="form-label">Salary <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input asp-for="Salary" class="form-control" placeholder="0.00" step="0.01" min="0.01">
+                            </div>
+                            <span asp-validation-for="Salary" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="DepartmentId" class="form-label">Department <span class="text-danger">*</span></label>
+                        <select asp-for="DepartmentId" class="form-select" asp-items="ViewBag.Departments">
+                            <option value="">-- Select Department --</option>
+                        </select>
+                        <span asp-validation-for="DepartmentId" class="text-danger"></span>
+                    </div>
+
+                    <hr>
+
+                    <div class="d-flex justify-content-between">
+                        <a asp-action="Index" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-1"></i>Back to List
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i>Create Employee
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script>
+        // Set default hire date to today
+        document.addEventListener('DOMContentLoaded', function() {
+            const hireDateInput = document.querySelector('input[name="HireDate"]');
+            if (!hireDateInput.value) {
+                hireDateInput.value = new Date().toISOString().split('T')[0];
+            }
+        });
+
+        // Format salary input
+        document.querySelector('input[name="Salary"]').addEventListener('input', function(e) {
+            let value = e.target.value;
+            if (value && !isNaN(value)) {
+                e.target.value = parseFloat(value).toFixed(2);
+            }
+        });
+    </script>
+}

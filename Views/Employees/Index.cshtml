@@ -1,0 +1,184 @@
+﻿@model EmployeeManagementSystem.Models.PagedResult<EmployeeManagementSystem.Models.Employee>
+@{
+    ViewData["Title"] = "Employees";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-user-friends me-2"></i>Employees</h2>
+    <a asp-action="Create" class="btn btn-primary">
+        <i class="fas fa-plus me-1"></i>Add Employee
+    </a>
+</div>
+
+<!-- Search and Filter -->
+<div class="row mb-3">
+    <div class="col-md-6">
+        <form method="get" class="d-flex">
+            <input type="hidden" name="sortBy" value="@ViewBag.CurrentSort" />
+            <input type="hidden" name="desc" value="@ViewBag.CurrentDesc" />
+            <input type="hidden" name="pageSize" value="@ViewBag.PageSize" />
+            <input type="text" name="searchTerm" class="form-control me-2" placeholder="Search employees..." value="@ViewBag.SearchTerm">
+            <button type="submit" class="btn btn-outline-primary">
+                <i class="fas fa-search"></i>
+            </button>
+        </form>
+    </div>
+    <div class="col-md-6">
+        <div class="d-flex justify-content-end">
+            <div class="dropdown me-2">
+                <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    <i class="fas fa-sort me-1"></i>Sort
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="@Url.Action("Index", new { sortBy = "HireDate", desc = true, searchTerm = ViewBag.SearchTerm, pageSize = ViewBag.PageSize })">Hire Date (Newest)</a></li>
+                    <li><a class="dropdown-item" href="@Url.Action("Index", new { sortBy = "HireDate", desc = false, searchTerm = ViewBag.SearchTerm, pageSize = ViewBag.PageSize })">Hire Date (Oldest)</a></li>
+                    <li><a class="dropdown-item" href="@Url.Action("Index", new { sortBy = "Salary", desc = true, searchTerm = ViewBag.SearchTerm, pageSize = ViewBag.PageSize })">Salary (High-Low)</a></li>
+                    <li><a class="dropdown-item" href="@Url.Action("Index", new { sortBy = "Salary", desc = false, searchTerm = ViewBag.SearchTerm, pageSize = ViewBag.PageSize })">Salary (Low-High)</a></li>
+                </ul>
+            </div>
+            <div class="dropdown">
+                <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    <i class="fas fa-list me-1"></i>Show @ViewBag.PageSize
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="@Url.Action("Index", new { pageSize = 5, sortBy = ViewBag.CurrentSort, desc = ViewBag.CurrentDesc, searchTerm = ViewBag.SearchTerm })">5 per page</a></li>
+                    <li><a class="dropdown-item" href="@Url.Action("Index", new { pageSize = 10, sortBy = ViewBag.CurrentSort, desc = ViewBag.CurrentDesc, searchTerm = ViewBag.SearchTerm })">10 per page</a></li>
+                    <li><a class="dropdown-item" href="@Url.Action("Index", new { pageSize = 25, sortBy = ViewBag.CurrentSort, desc = ViewBag.CurrentDesc, searchTerm = ViewBag.SearchTerm })">25 per page</a></li>
+                    <li><a class="dropdown-item" href="@Url.Action("Index", new { pageSize = 50, sortBy = ViewBag.CurrentSort, desc = ViewBag.CurrentDesc, searchTerm = ViewBag.SearchTerm })">50 per page</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (!string.IsNullOrEmpty(ViewBag.SearchTerm?.ToString()))
+{
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle me-2"></i>
+        Showing results for "<strong>@ViewBag.SearchTerm</strong>" - 
+        <a href="@Url.Action("Index")" class="alert-link">Clear search</a>
+    </div>
+}
+
+<!-- Employees Table -->
+<div class="card">
+    <div class="card-body">
+        @if (Model.Items.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Department</th>
+                            <th>Hire Date</th>
+                            <th>Salary</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var employee in Model.Items)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                                            <span class="fw-bold">@employee.FirstName.First()@employee.LastName.First()</span>
+                                        </div>
+                                        <div>
+                                            <strong>@employee.FullName</strong>
+                                            <br>
+                                            <small class="text-muted">ID: @employee.Id</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <a href="mailto:@employee.Email" class="text-decoration-none">@employee.Email</a>
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary">@employee.Department?.Name</span>
+                                </td>
+                                <td>
+                                    @employee.HireDate.ToString("MMM dd, yyyy")
+                                    <br>
+                                    <small class="text-muted">@((DateTime.Now - employee.HireDate).Days) days ago</small>
+                                </td>
+                                <td>
+                                    <strong>@employee.Salary.ToString("C")</strong>
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a asp-action="Details" asp-route-id="@employee.Id" class="btn btn-sm btn-outline-primary" title="View Details">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a asp-action="Edit" asp-route-id="@employee.Id" class="btn btn-sm btn-outline-warning" title="Edit">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <a asp-action="Delete" asp-route-id="@employee.Id" class="btn btn-sm btn-outline-danger" title="Delete">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            @if (Model.TotalPages > 1)
+            {
+                <nav aria-label="Employee pagination" class="mt-3">
+                    <ul class="pagination justify-content-center">
+                        @if (Model.HasPreviousPage)
+                        {
+                            <li class="page-item">
+                                <a class="page-link" href="@Url.Action("Index", new { page = Model.PageNumber - 1, pageSize = ViewBag.PageSize, sortBy = ViewBag.CurrentSort, desc = ViewBag.CurrentDesc, searchTerm = ViewBag.SearchTerm })">
+                                    <i class="fas fa-chevron-left"></i>
+                                </a>
+                            </li>
+                        }
+
+                        @for (int i = Math.Max(1, Model.PageNumber - 2); i <= Math.Min(Model.TotalPages, Model.PageNumber + 2); i++)
+                        {
+                            <li class="page-item @(i == Model.PageNumber ? "active" : "")">
+                                <a class="page-link" href="@Url.Action("Index", new { page = i, pageSize = ViewBag.PageSize, sortBy = ViewBag.CurrentSort, desc = ViewBag.CurrentDesc, searchTerm = ViewBag.SearchTerm })">@i</a>
+                            </li>
+                        }
+
+                        @if (Model.HasNextPage)
+                        {
+                            <li class="page-item">
+                                <a class="page-link" href="@Url.Action("Index", new { page = Model.PageNumber + 1, pageSize = ViewBag.PageSize, sortBy = ViewBag.CurrentSort, desc = ViewBag.CurrentDesc, searchTerm = ViewBag.SearchTerm })">
+                                    <i class="fas fa-chevron-right"></i>
+                                </a>
+                            </li>
+                        }
+                    </ul>
+                </nav>
+                
+                <div class="text-center text-muted">
+                    <small>
+                        Showing @((Model.PageNumber - 1) * Model.PageSize + 1) to @Math.Min(Model.PageNumber * Model.PageSize, Model.TotalCount) 
+                        of @Model.TotalCount employees
+                    </small>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="text-center text-muted py-5">
+                <i class="fas fa-users fa-4x mb-3"></i>
+                <h4>No employees found</h4>
+                @if (!string.IsNullOrEmpty(ViewBag.SearchTerm?.ToString()))
+                {
+                    <p>Try adjusting your search criteria or <a href="@Url.Action("Index")" class="text-decoration-none">view all employees</a>.</p>
+                }
+                else
+                {
+                    <p>Get started by <a asp-action="Create" class="text-decoration-none">adding your first employee</a>.</p>
+                }
+            </div>
+        }
+    </div>
