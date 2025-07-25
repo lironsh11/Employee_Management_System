@@ -9,6 +9,7 @@ on:
 env:
   DOTNET_VERSION: '8.0.x'
   DOCKER_IMAGE_NAME: employee-management-system
+  WORKING_DIRECTORY: './EmployeeManagementSystem'
 
 jobs:
   test:
@@ -28,18 +29,21 @@ jobs:
       uses: actions/cache@v3
       with:
         path: ~/.nuget/packages
-        key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/EmployeeManagementSystem/*.csproj') }}
         restore-keys: |
           ${{ runner.os }}-nuget-
           
     - name: Restore dependencies
       run: dotnet restore
+      working-directory: ${{ env.WORKING_DIRECTORY }}
       
     - name: Build application
       run: dotnet build --configuration Release --no-restore
+      working-directory: ${{ env.WORKING_DIRECTORY }}
       
     - name: Run tests
       run: dotnet test --configuration Release --no-build --verbosity normal --collect:"XPlat Code Coverage"
+      working-directory: ${{ env.WORKING_DIRECTORY }}
       
     - name: Upload coverage reports
       uses: codecov/codecov-action@v3
@@ -64,6 +68,7 @@ jobs:
         
     - name: Restore dependencies
       run: dotnet restore
+      working-directory: ${{ env.WORKING_DIRECTORY }}
       
     - name: Run security scan
       run: |
@@ -75,6 +80,7 @@ jobs:
         else
           echo "✅ No vulnerable packages found"
         fi
+      working-directory: ${{ env.WORKING_DIRECTORY }}
 
   docker-build:
     name: Docker Build and Test
@@ -91,8 +97,8 @@ jobs:
     - name: Build Docker image
       uses: docker/build-push-action@v5
       with:
-        context: .
-        file: ./Dockerfile
+        context: ./EmployeeManagementSystem
+        file: ./EmployeeManagementSystem/Dockerfile
         push: false
         tags: ${{ env.DOCKER_IMAGE_NAME }}:test
         cache-from: type=gha
@@ -152,14 +158,17 @@ jobs:
         
     - name: Restore dependencies
       run: dotnet restore
+      working-directory: ${{ env.WORKING_DIRECTORY }}
       
     - name: Run code analysis
       run: |
         dotnet build --configuration Release --verbosity normal --no-restore
+      working-directory: ${{ env.WORKING_DIRECTORY }}
         
     - name: Check code formatting
       run: |
         dotnet format --verify-no-changes --verbosity diagnostic
+      working-directory: ${{ env.WORKING_DIRECTORY }}
 
   deploy-staging:
     name: Deploy to Staging
@@ -185,8 +194,8 @@ jobs:
     - name: Build and push Docker image
       uses: docker/build-push-action@v5
       with:
-        context: .
-        file: ./Dockerfile
+        context: ./EmployeeManagementSystem
+        file: ./EmployeeManagementSystem/Dockerfile
         push: true
         tags: |
           ghcr.io/${{ github.repository_owner }}/${{ env.DOCKER_IMAGE_NAME }}:staging
@@ -204,7 +213,7 @@ jobs:
     name: Deploy to Production
     runs-on: ubuntu-latest
     needs: [test, security-scan, docker-build, code-quality]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
     environment: production
     
     steps:
@@ -224,8 +233,8 @@ jobs:
     - name: Build and push Docker image
       uses: docker/build-push-action@v5
       with:
-        context: .
-        file: ./Dockerfile
+        context: ./EmployeeManagementSystem
+        file: ./EmployeeManagementSystem/Dockerfile
         push: true
         tags: |
           ghcr.io/${{ github.repository_owner }}/${{ env.DOCKER_IMAGE_NAME }}:latest
