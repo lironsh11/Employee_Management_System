@@ -2,15 +2,15 @@
 
 on:
   push:
-    branches: [ master, develop ]
+    branches: [ main, develop ]
   pull_request:
-    branches: [ master ]
+    branches: [ main ]
   workflow_dispatch: # manual trigger from the UI
 
-# Grant the GITHUB_TOKEN write access to GitHub Packages
+# Allow the default GITHUB_TOKEN to push to GitHub Packages (ghcr.io)
 permissions:
-  contents: read  # minimal content permissions
-  packages: write # allow pushing to ghcr.io
+  contents: read
+  packages: write
 
 env:
   DOTNET_VERSION: '8.0.x'
@@ -100,7 +100,7 @@ jobs:
           context: .
           file: ./Dockerfile
           push: false
-          load: true  # load image into local docker cache
+          load: true        # make the image available to "docker run" below
           tags: ${{ env.DOCKER_IMAGE_NAME }}:test
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -128,109 +128,18 @@ jobs:
       - name: Run code analysis
         run: dotnet build --configuration Release --verbosity normal --no-restore
 
-  deploy-staging:
-    name: Deploy to Staging
-    runs-on: ubuntu-latest
-    needs: [test, security-scan, docker-build, code-quality]
-    if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
-    environment: staging
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Login to ghcr.io
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and push Docker image (staging)
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./Dockerfile
-          push: true
-          tags: |
-            ghcr.io/${{ github.repository_owner }}/${{ env.DOCKER_IMAGE_NAME }}:staging
-            ghcr.io/${{ github.repository_owner }}/${{ env.DOCKER_IMAGE_NAME }}:staging-${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Deploy to staging
-        run: |
-          echo "🚀 Deploying to staging environment..."
-          echo "Image: ghcr.io/${{ github.repository_owner }}/${{ env.DOCKER_IMAGE_NAME }}:staging-${{ github.sha }}"
-          # TODO: add real deployment script
-
-  deploy-production:
-    name: Deploy to Production
-    runs-on: ubuntu-latest
-    needs: [test, security-scan, docker-build, code-quality]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    environment: production
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Login to ghcr.io
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and push Docker image (production)
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./Dockerfile
-          push: true
-          tags: |
-            ghcr.io/${{ github.repository_owner }}/${{ env.DOCKER_IMAGE_NAME }}:latest
-            ghcr.io/${{ github.repository_owner }}/${{ env.DOCKER_IMAGE_NAME }}:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Deploy to production
-        run: |
-          echo "🚀 Deploying to production environment..."
-          echo "Image: ghcr.io/${{ github.repository_owner }}/${{ env.DOCKER_IMAGE_NAME }}:${{ github.sha }}"
-          # TODO: add real deployment script
-
-      - name: Create GitHub Release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: v${{ github.run_number }}
-          release_name: Release v${{ github.run_number }}
-          body: |
-            ## Changes in this Release
-            - Deployed commit: ${{ github.sha }}
-            - Docker image: `ghcr.io/${{ github.repository_owner }}/${{ env.DOCKER_IMAGE_NAME }}:${{ github.sha }}`
-            
-            ## Deployment
-            This release has been automatically deployed to production.
-          draft: false
-          prerelease: false
-
+  # --------------------
+  # Notify Team (must always run LAST)
+  # --------------------
   notification:
     name: Notify Team
     runs-on: ubuntu-latest
+    needs: [test, security-scan, docker-build, code-quality] # run after everything
     if: always()
 
     steps:
       - name: Post result
         run: |
-          echo "📝 Workflow ${{ github.workflow }} finished with status ${{ job.status }}"
+          echo "📝 Workflow '${{ github.workflow }}' finished with status '${{ job.status }}'"
           echo "Branch: ${{ github.ref_name }}"
           echo "Commit: ${{ github.sha }}"
