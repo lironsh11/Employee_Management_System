@@ -1,4 +1,4 @@
-﻿/ Global app configuration
+﻿// Global app configuration
 const App = {
     config: {
         pageSize: 10,
@@ -155,4 +155,53 @@ const App = {
     utils: {
         // Show loading spinner
         showLoading: function (element) {
-            element.innerHTML = '<div class="d-flex justify-content-center"><div class="spinner-border" role="status"><span class="visually-hidden
+            element.innerHTML = '<div class="d-flex justify-content-center"><div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div></div>';
+        },
+
+        // Hide loading spinner
+        hideLoading: function (element) {
+            const spinner = element.querySelector('.spinner-border');
+            if (spinner) {
+                spinner.parentElement.parentElement.remove();
+            }
+        },
+
+        // Format currency
+        formatCurrency: function (amount) {
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD'
+            }).format(amount);
+        },
+
+        // Format date
+        formatDate: function (date) {
+            return new Intl.DateTimeFormat('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            }).format(new Date(date));
+        },
+
+        // Debounce function
+        debounce: function (func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+    }
+};
+
+// Initialize app when DOM is loaded
+document.addEventListener('DOMContentLoaded', function () {
+    App.init();
+});
+
+// Export for global use
+window.App = App;
